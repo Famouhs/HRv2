@@ -1,6 +1,6 @@
-
 import pandas as pd
 import datetime
+import streamlit as st
 from scraper.player_stats import get_player_stats
 from scraper.weather import get_weather_data
 from scraper.ballpark_factors import get_ballpark_factor
@@ -12,8 +12,6 @@ from matchup.calculate_matchup_boost import calculate_matchup_boost
 def generate_daily_projections(date=None):
     if date is None:
         date = datetime.datetime.now().strftime("%Y-%m-%d")
-
-    print(f"\n📅 Generating MLB HR Projections for {date}...")
 
     stats_df = get_player_stats(date)
     odds_df = get_hr_odds(date)
@@ -35,7 +33,6 @@ def generate_daily_projections(date=None):
         pitcher_hand = pitcher_dict.get(opponent, {}).get("hand", "R")
 
         matchup_boost = calculate_matchup_boost(player, pitcher, pitcher_hand)
-
         rating = rate_player(row, weather_boost, park_boost, matchup_boost)
 
         projections.append({
@@ -52,10 +49,18 @@ def generate_daily_projections(date=None):
     return df
 
 def main():
+    st.set_page_config(page_title="MLB HR Predictor", layout="wide")
+    st.title("🔮 Daily MLB Home Run Projections")
+
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    df = generate_daily_projections(today)
-    print("\n📊 Top 10 Projected HR Hitters Today:\n")
-    print(df.head(10).to_markdown())
+    st.caption(f"Projections for {today}")
+
+    try:
+        df = generate_daily_projections(today)
+        st.success("✅ Projections generated!")
+        st.dataframe(df.head(10), use_container_width=True)
+    except Exception as e:
+        st.error(f"⚠️ Error generating projections: {e}")
 
 if __name__ == "__main__":
     main()
